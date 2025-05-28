@@ -1,0 +1,25 @@
+# Python 
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+
+# Environment variables
+.env
+
+# Virtual environment
+venv/
+
+# Log files
+*.log
+
+# VirusTotal API key
+VT_API_KEY=
+
+# Sandbox logs
+sandbox_logs/
+
+# Sandbox monitor logs
+sandbox_monitor.log
+

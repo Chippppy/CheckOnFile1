@@ -1,0 +1,9 @@
+pefile==2023.2.7
+vt-py==0.20.0
+python-docx==1.0.1
+python-pptx==0.6.21
+openpyxl==3.1.2
+psutil==5.9.8
+requests==2.31.0
+pillow==10.2.0
+python-dotenv==1.0.0 
