@@ -18,27 +18,45 @@ class FileAnalyzerGUI:
         
         # Variables
         self.file_path = tk.StringVar()
+        self.hash_input = tk.StringVar()
         self.sandbox_monitor = None
         self.monitoring = False
-        self.current_results = {}  # Store current analysis results
+        self.current_results = {}
         
         self._create_widgets()
         self._create_layout()
 
     def _create_widgets(self):
+        # Create notebook for tabs
+        self.notebook = ttk.Notebook(self.root)
+        
+        # Create tabs
+        self.file_tab = ttk.Frame(self.notebook)
+        self.hash_tab = ttk.Frame(self.notebook)
+        
+        self.notebook.add(self.file_tab, text='File Analysis')
+        self.notebook.add(self.hash_tab, text='Hash Lookup')
+
+        # File Analysis Tab
+        self._create_file_analysis_widgets()
+        
+        # Hash Lookup Tab
+        self._create_hash_lookup_widgets()
+
+    def _create_file_analysis_widgets(self):
         # File selection
-        self.file_frame = ttk.LabelFrame(self.root, text="File Selection", padding="5")
+        self.file_frame = ttk.LabelFrame(self.file_tab, text="File Selection", padding="5")
         self.file_entry = ttk.Entry(self.file_frame, textvariable=self.file_path, width=90)
         self.browse_button = ttk.Button(self.file_frame, text="Browse", command=self._browse_file)
 
         # Analysis options
-        self.options_frame = ttk.LabelFrame(self.root, text="Analysis Options", padding="5")
+        self.options_frame = ttk.LabelFrame(self.file_tab, text="Analysis Options", padding="5")
         self.sandbox_var = tk.BooleanVar()
         self.sandbox_check = ttk.Checkbutton(self.options_frame, text="Enable Sandbox Monitoring",
                                            variable=self.sandbox_var)
 
         # Control buttons
-        self.control_frame = ttk.Frame(self.root, padding="5")
+        self.control_frame = ttk.Frame(self.file_tab, padding="5")
         self.analyze_button = ttk.Button(self.control_frame, text="Analyze",
                                        command=self._start_analysis)
         self.stop_button = ttk.Button(self.control_frame, text="Stop Monitoring",
@@ -47,35 +65,70 @@ class FileAnalyzerGUI:
                                     command=self._save_results, state='disabled')
 
         # Results area
-        self.results_frame = ttk.LabelFrame(self.root, text="Analysis Results", padding="5")
+        self.results_frame = ttk.LabelFrame(self.file_tab, text="Analysis Results", padding="5")
         self.results_text = scrolledtext.ScrolledText(self.results_frame, width=80, height=20)
         
         # Progress bar
         self.progress_var = tk.DoubleVar()
-        self.progress_bar = ttk.Progressbar(self.root, variable=self.progress_var, maximum=100)
+        self.progress_bar = ttk.Progressbar(self.file_tab, variable=self.progress_var, maximum=100)
+
+    def _create_hash_lookup_widgets(self):
+        # Hash input frame
+        self.hash_frame = ttk.LabelFrame(self.hash_tab, text="Hash Input", padding="5")
+        
+        # Hash type selection
+        self.hash_type_var = tk.StringVar(value="md5")
+        self.hash_type_frame = ttk.Frame(self.hash_frame)
+        ttk.Label(self.hash_type_frame, text="Hash Type:").pack(side='left', padx=5)
+        ttk.Radiobutton(self.hash_type_frame, text="MD5", variable=self.hash_type_var, 
+                       value="md5").pack(side='left', padx=5)
+        ttk.Radiobutton(self.hash_type_frame, text="SHA-1", variable=self.hash_type_var,
+                       value="sha1").pack(side='left', padx=5)
+        ttk.Radiobutton(self.hash_type_frame, text="SHA-256", variable=self.hash_type_var,
+                       value="sha256").pack(side='left', padx=5)
+        
+        # Hash input
+        self.hash_input_frame = ttk.Frame(self.hash_frame)
+        ttk.Label(self.hash_input_frame, text="Enter Hash:").pack(side='left', padx=5)
+        self.hash_entry = ttk.Entry(self.hash_input_frame, textvariable=self.hash_input, width=70)
+        self.hash_entry.pack(side='left', padx=5)
+        
+        # Hash lookup button
+        self.lookup_button = ttk.Button(self.hash_frame, text="Lookup Hash",
+                                      command=self._lookup_hash)
+        
+        # Hash results area
+        self.hash_results_frame = ttk.LabelFrame(self.hash_tab, text="Lookup Results", padding="5")
+        self.hash_results_text = scrolledtext.ScrolledText(self.hash_results_frame, width=80, height=25)
 
     def _create_layout(self):
-        # File selection layout
+        # Add notebook to root
+        self.notebook.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # File Analysis Tab Layout
         self.file_frame.pack(fill='x', padx=5, pady=5)
-        self.file_entry.pack(side='left', padx=10)
+        self.file_entry.pack(side='left', padx=5)
         self.browse_button.pack(side='left', padx=5)
 
-        # Options layout
         self.options_frame.pack(fill='x', padx=5, pady=5)
         self.sandbox_check.pack(side='left', padx=5)
 
-        # Control buttons layout
         self.control_frame.pack(fill='x', padx=5, pady=5)
         self.analyze_button.pack(side='left', padx=5)
         self.stop_button.pack(side='left', padx=5)
         self.save_button.pack(side='left', padx=5)
 
-        # Progress bar layout
         self.progress_bar.pack(fill='x', padx=5, pady=5)
-
-        # Results layout
         self.results_frame.pack(fill='both', expand=True, padx=5, pady=5)
         self.results_text.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Hash Lookup Tab Layout
+        self.hash_frame.pack(fill='x', padx=5, pady=5)
+        self.hash_type_frame.pack(fill='x', padx=5, pady=5)
+        self.hash_input_frame.pack(fill='x', padx=5, pady=5)
+        self.lookup_button.pack(pady=10)
+        self.hash_results_frame.pack(fill='both', expand=True, padx=5, pady=5)
+        self.hash_results_text.pack(fill='both', expand=True, padx=5, pady=5)
 
     def _browse_file(self):
         filename = filedialog.askopenfilename()
@@ -214,6 +267,61 @@ class FileAnalyzerGUI:
             if not self.monitoring:
                 self.analyze_button.config(state='normal')
                 self.save_button.config(state='normal')  # Enable save button after analysis
+
+    def _lookup_hash(self):
+        """Lookup a hash using VirusTotal API"""
+        hash_value = self.hash_input.get().strip()
+        hash_type = self.hash_type_var.get()
+        
+        # Validate hash format
+        if not self._validate_hash(hash_value, hash_type):
+            messagebox.showerror("Invalid Hash", 
+                               f"Please enter a valid {hash_type.upper()} hash.")
+            return
+
+        self.hash_results_text.delete(1.0, tk.END)
+        self.hash_results_text.insert(tk.END, f"Looking up {hash_type.upper()} hash: {hash_value}\n\n")
+        self.lookup_button.config(state='disabled')
+        
+        threading.Thread(target=self._perform_hash_lookup, 
+                       args=(hash_value,), daemon=True).start()
+
+    def _validate_hash(self, hash_value, hash_type):
+        """Validate hash format based on type"""
+        if not hash_value:
+            return False
+            
+        expected_lengths = {
+            "md5": 32,
+            "sha1": 40,
+            "sha256": 64
+        }
+        
+        if len(hash_value) != expected_lengths.get(hash_type, 0):
+            return False
+            
+        # Check if hash contains only valid hexadecimal characters
+        try:
+            int(hash_value, 16)
+            return True
+        except ValueError:
+            return False
+
+    def _perform_hash_lookup(self, hash_value):
+        """Perform the actual hash lookup"""
+        try:
+            vt_analyzer = VTAnalyzer()
+            results = vt_analyzer.get_file_report(hash_value)
+            
+            if 'error' in results:
+                self.hash_results_text.insert(tk.END, f"Error: {results['error']}\n")
+            else:
+                self.hash_results_text.insert(tk.END, json.dumps(results, indent=4))
+                
+        except Exception as e:
+            self.hash_results_text.insert(tk.END, f"Error during lookup: {str(e)}\n")
+        finally:
+            self.lookup_button.config(state='normal')
 
 def main():
     root = tk.Tk()
